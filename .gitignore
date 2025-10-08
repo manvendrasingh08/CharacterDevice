@@ -1,0 +1,12 @@
+*.cmd
+*.mod.*
+*.o
+*.ko
+*.order
+Module.symvers
+modules.order
+.auto_dev_class.*
+*~
+*.swp
+.DS_Store
+
