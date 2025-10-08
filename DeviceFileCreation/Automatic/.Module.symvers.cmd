@@ -1,0 +1,1 @@
+savedcmd_/home/manvendra08/Desktop/CharacterDriver/DeviceFileCreation/Automatic/Module.symvers :=  scripts/mod/modpost -M -m -a      -o /home/manvendra08/Desktop/CharacterDriver/DeviceFileCreation/Automatic/Module.symvers -T /home/manvendra08/Desktop/CharacterDriver/DeviceFileCreation/Automatic/modules.order -i Module.symvers -e 

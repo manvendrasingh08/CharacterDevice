@@ -1,0 +1,1 @@
+savedcmd_/home/manvendra08/Desktop/CharacterDriver/DeviceFileCreation/Automatic/auto_dev_class.mod := printf '%s\n'   auto_dev_class.o | awk '!x[$$0]++ { print("/home/manvendra08/Desktop/CharacterDriver/DeviceFileCreation/Automatic/"$$0) }' > /home/manvendra08/Desktop/CharacterDriver/DeviceFileCreation/Automatic/auto_dev_class.mod
