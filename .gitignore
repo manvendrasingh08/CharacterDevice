@@ -9,4 +9,6 @@ modules.order
 *~
 *.swp
 .DS_Store
+.gitignore.save
+.gitignore.save.1
 
