@@ -1,0 +1,2 @@
+ring buffers are imlemented when the kenel buffer soze is fixed and is not dynamic.
+its just a way of making the buffer inside the read and write functions of the character driver or any other.

@@ -1,0 +1,143 @@
+# ===============================
+# WAIT QUEUES IN LINUX KERNEL
+# ===============================
+
+# 1. OVERVIEW
+# ------------
+# Wait queues are kernel mechanisms that allow processes to **sleep until a certain condition is true**.
+# They are widely used in device drivers (character drivers, network drivers, etc.) where a process
+# may need to wait for a resource, event, or data to become available.
+
+# Key Idea:
+# - Instead of **busy-waiting** (constantly checking a condition, which wastes CPU cycles),
+#   a process can go to **sleep** on a wait queue.
+# - When the condition becomes true, the process is **woken up** by the kernel.
+# - Wait queues work in conjunction with synchronization primitives like **mutexes** or **spinlocks**.
+
+# -------------------------------
+# 2. WHY MUTEX ALONE IS NOT ENOUGH
+# -------------------------------
+# Mutex provides **mutual exclusion**, i.e., only one process can access a resource at a time.
+# But mutex cannot make a process **sleep until a condition is true**.
+# Example:
+# - Suppose a process wants to read data from a device buffer.
+# - If buffer is empty:
+#     - Mutex can prevent other processes from accessing the buffer concurrently.
+#     - But the process still has to **poll the buffer repeatedly** (busy-wait) until data is available.
+# - This wastes CPU cycles.
+# - Wait queue solves this by putting the process to **sleep efficiently**, releasing CPU to other tasks.
+
+# -------------------------------
+# 3. COMBINING MUTEX + WAIT QUEUE
+# -------------------------------
+# Standard pattern:
+# 1. Acquire mutex to protect the shared resource.
+# 2. Check condition (e.g., is buffer empty/full?).
+# 3. If condition not met:
+#      - Release mutex temporarily.
+#      - Sleep on wait queue.
+# 4. When woken up:
+#      - Re-acquire mutex.
+#      - Re-check condition.
+# 5. Proceed once condition is satisfied.
+
+# This combination ensures:
+# - **Mutual exclusion** on shared data (mutex).
+# - **Efficient waiting** without wasting CPU cycles (wait queue).
+
+# -------------------------------
+# 4. WAIT QUEUE TYPES
+# -------------------------------
+# 1. **wait_queue_head_t**:
+#    - A structure representing a wait queue.
+#    - Must be initialized before use.
+
+# 2. **wait_queue_entry_t** (or wait_queue_t in older kernels):
+#    - Represents a process waiting on the queue.
+
+# -------------------------------
+# 5. FUNCTIONS / MACROS
+# -------------------------------
+
+# 1. DECLARE_WAIT_QUEUE_HEAD(name)
+#    -------------------------------
+#    - Declare and initialize a wait queue head.
+#    - Example:
+DECLARE_WAIT_QUEUE_HEAD(my_waitqueue)
+#      'my_waitqueue' is now ready to use.
+
+# 2. init_waitqueue_head(wait_queue_head_t *q)
+#    -----------------------------------------
+#    - Initializes a wait queue head at runtime (instead of at compile-time).
+#    - Arguments:
+#      *q -> pointer to wait_queue_head_t
+#    - Example:
+init_waitqueue_head(&my_waitqueue)
+
+# 3. wait_event_interruptible(wait_queue, condition)
+#    ------------------------------------------------
+#    - Puts the current process to sleep until condition becomes true.
+#    - Releases CPU to other tasks while waiting.
+#    - Arguments:
+#      wait_queue -> wait queue head
+#      condition  -> Boolean expression
+#    - Returns 0 if woken up normally, -ERESTARTSYS if interrupted by signal
+#    - Example:
+wait_event_interruptible(my_waitqueue, buffer_has_data)
+
+# 4. wait_event(wait_queue, condition)
+#    ---------------------------------
+#    - Same as above, but cannot be interrupted by signals.
+#    - Use with caution.
+
+# 5. wake_up(wait_queue)
+#    -------------------
+#    - Wakes up **all processes** sleeping on the wait queue.
+#    - Example:
+wake_up(&my_waitqueue)
+
+# 6. wake_up_interruptible(wait_queue)
+#    ---------------------------------
+#    - Wakes up processes sleeping on the wait queue that are waiting **interruptibly**.
+#    - Example:
+wake_up_interruptible(&my_waitqueue)
+
+# -------------------------------
+# 6. PATTERN EXAMPLE (CHARACTER DRIVER)
+# -------------------------------
+# Pseudocode:
+mutex_lock(&buffer_mutex)                  # Step 1: acquire mutex
+while (buffer_empty) {                     # Step 2: check condition
+    mutex_unlock(&buffer_mutex)            # Step 3: release mutex before sleeping
+    wait_event_interruptible(my_waitqueue, !buffer_empty)  # Step 4: sleep until data available
+    mutex_lock(&buffer_mutex)              # Step 5: re-acquire mutex after waking
+}
+# Step 6: process data
+read_from_buffer()
+mutex_unlock(&buffer_mutex)                # Step 7: release mutex
+
+# When new data arrives (e.g., in write() or interrupt handler):
+mutex_lock(&buffer_mutex)
+add_data_to_buffer()
+wake_up_interruptible(&my_waitqueue)      # Wake up waiting readers
+mutex_unlock(&buffer_mutex)
+
+# -------------------------------
+# 7. KEY POINTS
+# -------------------------------
+# 1. Wait queues allow **efficient sleeping**; mutexes alone do not.
+# 2. Always combine **mutex + wait queue** to:
+#    - Protect shared resources
+#    - Sleep without busy-waiting
+# 3. Use **wait_event_interruptible** if you want signal handling (e.g., Ctrl+C).
+# 4. Use **wake_up / wake_up_interruptible** to notify sleeping processes.
+# 5. Typical use case: reading/writing to a **character driver buffer** where producer/consumer pattern exists.
+
+# -------------------------------
+# 8. SUMMARY
+# -------------------------------
+# - **Mutex:** Protect shared data from concurrent access (mutual exclusion).
+# - **Wait Queue:** Allow processes to sleep efficiently until a condition is true.
+# - **Together:** Ensure safe, efficient driver operations, especially when waiting for I/O or buffer availability.
+# - **Functions:** init_waitqueue_head(), wait_event(), wait_event_interruptible(), wake_up(), wake_up_interruptible()
+
