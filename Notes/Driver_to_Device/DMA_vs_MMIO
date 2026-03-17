@@ -1,0 +1,87 @@
+# ===============================
+# MMIO vs DMA
+# ===============================
+
+# 1. OVERVIEW
+# ------------
+# MMIO (Memory-Mapped I/O):
+# - CPU communicates directly with device registers by reading/writing memory addresses.
+# - Best suited for small control/status operations.
+# - CPU is actively involved in every read/write operation.
+
+# DMA (Direct Memory Access):
+# - Device transfers data directly to/from system memory without CPU intervention.
+# - Best suited for large bulk data transfers.
+# - CPU is free to perform other tasks while DMA handles the transfer.
+
+# -------------------------------
+# 2. DATA FLOW
+# -------------------------------
+# MMIO:
+# CPU <--> Device
+# Each read/write operation is done by the CPU.
+# Example: CPU writes to control register or reads status register.
+
+# DMA:
+# Device <--> Memory
+# CPU initiates DMA transfer (configures source, destination, size), then can continue other work.
+# Example: DMA moves large network packet to kernel buffer without CPU copying.
+
+# -------------------------------
+# 3. SPEED
+# -------------------------------
+# MMIO:
+# - Low latency for small transfers (control/status).
+# - Poor for bulk transfers because CPU handles every byte/word.
+# - CPU is busy during the entire transfer.
+
+# DMA:
+# - High throughput for large transfers.
+# - CPU overhead minimal; transfer occurs asynchronously.
+# - Reduces memory copy operations (user<->kernel<->device).
+
+# -------------------------------
+# 4. CPU INVOLVEMENT
+# -------------------------------
+# MMIO:
+# - CPU directly reads/writes data.
+# - Each access consumes CPU cycles.
+# - Not scalable for high-throughput devices.
+
+# DMA:
+# - CPU sets up transfer, then DMA controller handles it.
+# - CPU free to execute other tasks.
+# - Ideal for network, storage, or graphics devices.
+
+# -------------------------------
+# 5. USAGE SCENARIOS
+# -------------------------------
+# MMIO:
+# - Device initialization.
+# - Setting control registers.
+# - Reading device status flags.
+# - Small configuration data.
+
+# DMA:
+# - Copying large buffers (disk, network packets, framebuffers).
+# - Zero-copy transfers from user-space to device.
+# - High-speed streaming data.
+
+# -------------------------------
+# 6. SUMMARY
+# -------------------------------
+# + MMIO
+#   - CPU involved in every access
+#   - Low latency for small operations
+#   - Inefficient for bulk data
+
+# + DMA
+#   - CPU initiates, then device transfers data autonomously
+#   - Efficient for large data transfers
+#   - Reduces CPU overhead and memory copying
+
+# TIP:
+# - Most high-performance drivers combine both:
+#   * MMIO for control/status registers
+#   * DMA for bulk data transfers
+
